@@ -1,25 +1,23 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddPostScreen extends StatefulWidget {
-  const AddPostScreen({Key? key}) : super(key: key);
-
   @override
   _AddPostScreenState createState() => _AddPostScreenState();
 }
 
 class _AddPostScreenState extends State<AddPostScreen> {
-  File? _image;
-  final TextEditingController _postTextController = TextEditingController();
+  TextEditingController _postTextController = TextEditingController();
+  String? _imageUrl;
 
   Future<void> _getImageFromCamera() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
+    final ImagePicker _picker = ImagePicker();
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
 
-    if (pickedFile != null) {
+    if (image != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        _imageUrl = image.path;
       });
     }
   }
@@ -28,10 +26,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Post'),
+        title: Text('Add Post'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -41,31 +39,61 @@ class _AddPostScreenState extends State<AddPostScreen> {
               },
               child: Container(
                 height: 200,
-                color: Colors.grey[300],
-                child: _image != null
-                    ? Image.file(_image!, fit: BoxFit.cover)
-                    : const Icon(Icons.camera_alt, size: 100),
+                color: Colors.grey[200],
+                child: _imageUrl != null
+                    ? Image.network(
+                  _imageUrl!,
+                  fit: BoxFit.cover,
+                )
+                    : Icon(
+                  Icons.camera_alt,
+                  size: 100,
+                  color: Colors.grey[400],
+                ),
+                alignment: Alignment.center,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             TextField(
               controller: _postTextController,
-              maxLines: 5,
-              decoration: const InputDecoration(
+              maxLines: null,
+              decoration: InputDecoration(
                 hintText: 'Write your post here...',
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Simpan post ke Firebase Cloud Firestore
-                // Code untuk menyimpan post ke Firestore dapat ditambahkan di sini
-
-                // Kembali ke Home Screen
-                Navigator.pop(context);
+                // Cek apakah ada teks post dan gambar telah dipilih
+                if (_postTextController.text.isNotEmpty && _imageUrl != null) {
+                  // Menyimpan pos ke Firestore
+                  FirebaseFirestore.instance.collection('posts').add({
+                    'text': _postTextController.text,
+                    'image_url': _imageUrl,
+                    'timestamp': Timestamp.now(),
+                  }).then((_) {
+                    // Jika penyimpanan berhasil, kembali ke layar sebelumnya
+                    Navigator.pop(context);
+                  }).catchError((error) {
+                    // Jika terjadi kesalahan, tampilkan pesan error
+                    print('Error saving post: $error');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to save post. Please try again.'),
+                      ),
+                    );
+                  });
+                } else {
+                  // Jika teks post atau gambar tidak tersedia, tampilkan pesan
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please write a post and select an image.'),
+                    ),
+                  );
+                }
               },
-              child: const Text('Post'),
+              child: Text('Post'),
             ),
           ],
         ),

@@ -7,10 +7,14 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   Future<void> _signOut(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const SignInScreen()),
-    );
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SignInScreen()),
+      );
+    } catch (e) {
+      print('Error signing out: $e');
+    }
   }
 
   @override
@@ -20,13 +24,13 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Home'),
       ),
       body: Center(
-        child: const Text('You have logged In'),
+        child: const Text('You are logged in'),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddPostScreen()),
+            MaterialPageRoute(builder: (context) => AddPostScreen()),
           );
         },
         child: const Icon(Icons.add),
