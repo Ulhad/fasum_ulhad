@@ -1,30 +1,93 @@
 import 'package:flutter/material.dart';
-import 'package:fasum/screens/add_post_screen.dart';
-import 'package:fasum/screens/sign_in_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fasum/screens/sign_in_screen.dart';
+import 'add_post_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const SignInScreen()),
-      );
-    } catch (e) {
-      print('Error signing out: $e');
-    }
+  Future<void> signOut(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => SignInScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('Beranda'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            onPressed: () {
+              signOut(context);
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
-      body: Center(
-        child: const Text('You are logged in'),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('posts').orderBy('timestamp', descending: true).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Tidak ada postingan tersedia'));
+          }
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var post = snapshot.data!.docs[index];
+              var data = post.data() as Map<String, dynamic>;
+              var postTime = data['timestamp'] as Timestamp;
+              var date = postTime.toDate();
+              var formattedDate = '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+
+              var username = data.containsKey('username') ? data['username'] : 'Anonim';
+              var imageUrl = data.containsKey('image_url') ? data['image_url'] : null;
+              var text = data.containsKey('text') ? data['text'] : '';
+
+              return Card(
+                margin: EdgeInsets.all(10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (imageUrl != null)
+                      Image.network(imageUrl),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            username,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            formattedDate,
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(text),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -33,26 +96,7 @@ class HomeScreen extends StatelessWidget {
             MaterialPageRoute(builder: (context) => AddPostScreen()),
           );
         },
-        child: const Icon(Icons.add),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text('FASUM ULHAD'),
-            ),
-            ListTile(
-              title: const Text('Sign Out'),
-              onTap: () {
-                _signOut(context);
-              },
-            ),
-          ],
-        ),
+        child: Icon(Icons.add),
       ),
     );
   }
