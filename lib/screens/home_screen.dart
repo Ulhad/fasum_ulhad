@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
               var date = postTime.toDate();
               var formattedDate = '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
 
-              var username = data.containsKey('username') ? data['username'] : 'Anonim';
+
               var imageUrl = data.containsKey('image_url') ? data['image_url'] : null;
               var text = data.containsKey('text') ? data['text'] : '';
 
@@ -62,14 +62,6 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            username,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(height: 4),
                           Text(
                             formattedDate,
                             style: TextStyle(
