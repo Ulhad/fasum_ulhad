@@ -42,6 +42,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^2.30.0
   firebase_auth: ^4.19.5
+  geolocator: ^12.0.0
+  permission_handler: ^11.3.1
+  url_launcher: ^6.2.6
 
 dev_dependencies:
   flutter_test:
