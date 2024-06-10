@@ -1,16 +1,41 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fasum/screens/sign_in_screen.dart';
 import 'add_post_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path/path.dart' as path;
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? imageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    loadImageUrl();
+  }
+
+  Future<void> loadImageUrl() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      imageUrl = prefs.getString('uploadedImageUrl');
+    });
+  }
 
   Future<void> signOut(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => SignInScreen()));
+      MaterialPageRoute(builder: (context) => SignInScreen()),
+    );
   }
 
   @override
@@ -41,7 +66,7 @@ class HomeScreen extends StatelessWidget {
             return const Center(child: Text('Tidak ada postingan tersedia'));
           }
           return GridView.builder(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3, // Jumlah kolom
               childAspectRatio: 1, // Rasio aspek untuk membuat gambar kotak
             ),
@@ -71,7 +96,7 @@ class HomeScreen extends StatelessWidget {
                     if (imageUrl != null)
                       Expanded(
                         child: Image.network(
-                          imageUrl,
+                          imageUrl!,
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
